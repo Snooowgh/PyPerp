@@ -33,3 +33,7 @@ class PairPool:
             abi=pair_pool_meta["abi"]
         )
         self.logger.info("PairPool contract loaded")
+
+    def get_index_price(self):
+        interval = 15 * 60
+        return self.pair_pool.functions.getIndexPrice(interval).call()
