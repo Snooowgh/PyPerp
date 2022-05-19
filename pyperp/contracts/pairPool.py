@@ -34,6 +34,10 @@ class PairPool:
         )
         self.logger.info("PairPool contract loaded")
 
-    def get_index_price(self):
+    def get_twap_index_price(self):
         interval = 15 * 60
+        return self.pair_pool.functions.getIndexPrice(interval).call()
+
+    def get_index_price(self):
+        interval = 0
         return self.pair_pool.functions.getIndexPrice(interval).call()
