@@ -33,6 +33,8 @@ class UniV3Pool:
             abi=uniV3_pool_meta["abi"]
         )
         self.logger.info("UniV3Pool contract loaded")
+        self.pow_constant = 2 ** 96
 
     def get_mark_price(self):
-        return self.uniV3_pool.functions.slot0().call()
+        # sqrtPriceX96
+        return (self.uniV3_pool.functions.slot0().call()[0] / self.pow_constant) ** 2
