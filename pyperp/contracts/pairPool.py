@@ -28,8 +28,8 @@ class PairPool:
 
     def get_twap_index_price(self):
         interval = 15 * 60
-        return self.pair_pool.functions.getIndexPrice(interval).call()
+        return self.pair_pool.functions.getIndexPrice(interval).call() / 10 ** 18
 
     def get_index_price(self):
         interval = 0
-        return self.pair_pool.functions.getIndexPrice(interval).call()
+        return self.pair_pool.functions.getIndexPrice(interval).call() / 10 ** 18
