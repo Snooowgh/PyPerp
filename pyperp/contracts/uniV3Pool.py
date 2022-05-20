@@ -1,13 +1,6 @@
 # coding=utf-8
 from pyperp.providers import ApiProvider
-from web3 import Web3
-from pyperp.contracts.types import (
-    OpenOrderInfo,
-    FundingGrowth
-)
-from typing import List
 import logging
-from hexbytes import HexBytes
 
 
 class UniV3Pool:
@@ -23,7 +16,6 @@ class UniV3Pool:
         provider - an object of class derived from ApiProvider
         '''
         self._provider = provider
-        self.wallet = self._provider.account
         self.logger = logging.getLogger("UniV3Pool")
 
         self.logger.info("Loading UniV3Pool contract")
