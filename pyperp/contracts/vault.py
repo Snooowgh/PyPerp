@@ -1,7 +1,6 @@
 '''Vault class'''
 
 from pyperp.providers import ApiProvider
-import logging
 from pyperp.common.types import (
     GasParams
 )
@@ -19,23 +18,18 @@ class Vault:
         '''
         self._provider = provider
         self.account = self._provider.account
-        self.logger = logging.getLogger("Vault")
 
-        self.logger.info("Loading Vault contract")
         vault_meta = self._provider.load_meta("Vault")
         self.vault = self._provider._api.eth.contract(
             address=vault_meta["address"],
             abi=vault_meta["abi"]
         )
-        self.logger.info("Vault contract loaded")
 
-        self.logger.info("Loading USDC contract")
         usdc_meta = self._provider.load_meta("USDC")
         self.usdc = self._provider.api.eth.contract(
             address=usdc_meta["address"],
             abi=usdc_meta["abi"]
         )
-        self.logger.info("USDC contract loaded")
 
     def approve_vault_to_use_usdc(
         self,
@@ -46,7 +40,6 @@ class Vault:
         Arguments:
         gas_params: GasParams object
         '''
-        logging.info("Approving ClearingHouse to use USDC")
         nonce = self._provider.api.eth.get_transaction_count(
             self.account.address
         )

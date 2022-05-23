@@ -3,7 +3,6 @@
 from pyperp.providers import ApiProvider
 from pyperp.contracts.types import AccountMarketInfo
 from web3 import Web3
-import logging
 
 
 class AccountBalance:
@@ -18,15 +17,12 @@ class AccountBalance:
         provider - An object of class derived from ApiProvider.
         '''
         self._provider = provider
-        self.logger = logging.getLogger("AccountBalance")
 
-        self.logger.info("Loading AccountBalance contract")
         account_balance_meta = self._provider.load_meta("AccountBalance")
         self.account_balance = self._provider._api.eth.contract(
             address=account_balance_meta["address"],
             abi=account_balance_meta["abi"]
         )
-        self.logger.info("AccountBalance contract loaded")
 
     def get_base_tokens(
         self,

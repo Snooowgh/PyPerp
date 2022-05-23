@@ -4,7 +4,6 @@ from pyperp.providers import ApiProvider
 from pyperp.contracts.types import (
     MarketInfo
 )
-import logging
 
 
 class MarketRegistry:
@@ -18,9 +17,7 @@ class MarketRegistry:
         provider - an object of classes derived from ApiProvider
         '''
         self._provider = provider
-        self.logger = logging.getLogger("MarketRegistry")
 
-        self.logger.info("Loading MarketRegistry Contract")
         market_registry_meta = self._provider.load_meta(
             "MarketRegistry"
         )
@@ -28,7 +25,6 @@ class MarketRegistry:
             address=market_registry_meta["address"],
             abi=market_registry_meta["abi"]
         )
-        self.logger.info("MarketRegistry Contract Loaded")
 
     def get_quote_token(self):
         '''

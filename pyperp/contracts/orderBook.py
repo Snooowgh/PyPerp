@@ -7,7 +7,6 @@ from pyperp.contracts.types import (
     FundingGrowth
 )
 from typing import List
-import logging
 from hexbytes import HexBytes
 
 
@@ -23,15 +22,12 @@ class OrderBook:
         '''
         self._provider = provider
         self.wallet = self._provider.account
-        self.logger = logging.getLogger("OrderBook")
 
-        self.logger.info("Loading OrderBook contract")
         order_book_meta = self._provider.load_meta("OrderBook")
         self.order_book = self._provider._api.eth.contract(
             address=order_book_meta["address"],
             abi=order_book_meta["abi"]
         )
-        self.logger.info("OrderBook contract loaded")
 
     def get_exchange(self):
         '''
