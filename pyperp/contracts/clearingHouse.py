@@ -9,7 +9,6 @@ from pyperp.contracts.types import (
 )
 from pyperp.common.types import GasParams
 from web3 import Web3
-import logging
 from dataclasses import astuple
 
 
@@ -22,39 +21,30 @@ class ClearingHouse:
         '''
         self._provider = provider
         self.account = self._provider.account
-        self.logger = logging.getLogger("ClearingHouse")
 
-        self.logger.info("Loading ClearingHouse contract")
         clearing_house_meta = self._provider.load_meta("ClearingHouse")
         self.clearing_house = self._provider.api.eth.contract(
             address=clearing_house_meta["address"],
             abi=clearing_house_meta["abi"]
         )
-        self.logger.info("ClearingHouse contract loaded")
 
-        self.logger.info("Loading USDC contract")
         usdc_meta = self._provider.load_meta("USDC")
         self.usdc = self._provider.api.eth.contract(
             address=usdc_meta["address"],
             abi=usdc_meta["abi"]
         )
-        self.logger.info("USDC contract loaded")
 
-        self.logger.info("Loading vBTC contract")
         vbtc_meta = self._provider.load_meta("vBTC")
         self.vbtc = self._provider.api.eth.contract(
             address=vbtc_meta["address"],
             abi=vbtc_meta["abi"]
         )
-        self.logger.info("vBTC contract loaded")
 
-        self.logger.info("Loading vETH contract")
         veth_meta = self._provider.load_meta("vETH")
         self.veth = self._provider.api.eth.contract(
             address=veth_meta["address"],
             abi=veth_meta["abi"]
         )
-        self.logger.info("vETH contract loaded")
 
     def add_liquidity(
         self,
