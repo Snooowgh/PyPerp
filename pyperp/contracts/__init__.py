@@ -6,3 +6,4 @@ from pyperp.contracts.vault import *
 from pyperp.contracts.types import *
 from pyperp.contracts.pairPool import *
 from pyperp.contracts.uniV3Pool import *
+from pyperp.contracts.exchange import *
