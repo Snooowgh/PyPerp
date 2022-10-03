@@ -20,8 +20,8 @@ class Exchange:
             abi=exchange_meta["abi"]
         )
 
-    def get_pending_funding_payment(self, trader):
-        return self.exchange.functions.getPendingFundingPayment(trader).call()
+    def get_pending_funding_payment(self, trader, baseToken):
+        return self.exchange.functions.getPendingFundingPayment(trader, baseToken).call()
 
-    def get_all_pending_funding_payment(self, trader, baseToken):
-        return self.exchange.functions.getAllPendingFundingPayment(trader, baseToken).call()
+    def get_all_pending_funding_payment(self, trader):
+        return self.exchange.functions.getAllPendingFundingPayment(trader).call()
