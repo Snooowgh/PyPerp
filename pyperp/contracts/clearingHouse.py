@@ -1,4 +1,5 @@
 '''ClearingHouse class.'''
+import threading
 
 from pyperp.providers import ApiProvider
 from pyperp.contracts.types import (
@@ -19,8 +20,12 @@ class ClearingHouse:
         Arguments:
         provider - An object of class derived from ApiProvider
         '''
+        self.MAX_RETRY = 3
         self._provider = provider
         self.account = self._provider.account
+
+        self.next_nonce = self.get_recent_nonce()
+        self.mutex = threading.Lock()
 
         clearing_house_meta = self._provider.load_meta("ClearingHouse")
         self.clearing_house = self._provider.api.eth.contract(
@@ -46,10 +51,46 @@ class ClearingHouse:
             abi=veth_meta["abi"]
         )
 
+    def get_recent_nonce(self):
+        return self._provider.api.eth.get_transaction_count(
+            self.account.address)
+
+    def retrySendTx(self, calledFunc, gas_params):
+        tx_hash = None
+        for _ in range(self.MAX_RETRY):
+            self.mutex.acquire()
+            try:
+                tx_params = {
+                    'nonce': self.next_nonce,
+                    **(gas_params.to_dict())
+                }
+                tx = calledFunc.buildTransaction(tx_params)
+                signed_tx = self._provider.api.eth.account.sign_transaction(
+                    tx, self.account.key.hex()
+                )
+                tx_hash = self._provider.api.eth.send_raw_transaction(
+                    signed_tx.rawTransaction.hex()
+                )
+                # receipt = self._provider.api.eth.wait_for_transaction_receipt(
+                #     tx_hash
+                # )
+                self.next_nonce += 1
+            except Exception as e:
+                if "nonce too low" in str(e):
+                    old_nonce = self.next_nonce
+                    self.next_nonce = self.get_recent_nonce()
+                    print("expired nonce:{} new nonce:{}".format(old_nonce, self.next_nonce))
+                    continue
+                else:
+                    raise e
+            finally:
+                self.mutex.release()
+        return tx_hash
+
     def add_liquidity(
-        self,
-        params: AddLiquidityParams,
-        gas_params: GasParams
+            self,
+            params: AddLiquidityParams,
+            gas_params: GasParams
     ):
         '''
         Add Liquidity
@@ -85,9 +126,9 @@ class ClearingHouse:
         return receipt
 
     def remove_liquidity(
-        self,
-        params: RemoveLiquidityParams,
-        gas_params: GasParams
+            self,
+            params: RemoveLiquidityParams,
+            gas_params: GasParams
     ):
         '''
         Remove Liquidity
@@ -122,9 +163,9 @@ class ClearingHouse:
         return receipt
 
     def settle_all_funding(
-        self,
-        trader: str,
-        gas_params: GasParams
+            self,
+            trader: str,
+            gas_params: GasParams
     ):
         '''
         Settle All Funding
@@ -132,12 +173,12 @@ class ClearingHouse:
         trader - wallet address of trader
         gas_params - GasParams object
         '''
-        assert(
+        assert (
             Web3.isAddress(trader),
             f"Trader address {trader} must be an address"
         )
         nonce = self._provider.api.eth.get_transaction_count(
-            self.wallet.address)
+            self.account.address)
 
         tx_params = {
             'nonce': nonce,
@@ -163,9 +204,9 @@ class ClearingHouse:
         return receipt
 
     def open_position(
-        self,
-        params: OpenPositionParams,
-        gas_params: GasParams
+            self,
+            params: OpenPositionParams,
+            gas_params: GasParams
     ):
         '''
         Open Position
@@ -173,37 +214,41 @@ class ClearingHouse:
         params - OpenPositionParams object
         gas_params - GasParams object
         '''
-        nonce = self._provider.api.eth.get_transaction_count(
-            self.account.address
-        )
+        # nonce = self._provider.api.eth.get_transaction_count(
+        #     self.account.address
+        # )
+        #
+        # tx_params = {
+        #     'nonce': nonce,
+        #     **(gas_params.to_dict())
+        # }
+        #
+        # tx = self.clearing_house.functions.openPosition(
+        #     astuple(params)
+        # ).buildTransaction(tx_params)
+        #
+        # signed_tx = self._provider.api.eth.account.sign_transaction(
+        #     tx, self.account.key.hex()
+        # )
+        #
+        # tx_hash = self._provider.api.eth.send_raw_transaction(
+        #     signed_tx.rawTransaction.hex()
+        # )
+        #
+        # receipt = self._provider.api.eth.wait_for_transaction_receipt(
+        #     tx_hash
+        # )
+        #
+        # return receipt
 
-        tx_params = {
-            'nonce': nonce,
-            **(gas_params.to_dict())
-        }
-
-        tx = self.clearing_house.functions.openPosition(
+        return self.retrySendTx(self.clearing_house.functions.openPosition(
             astuple(params)
-        ).buildTransaction(tx_params)
-
-        signed_tx = self._provider.api.eth.account.sign_transaction(
-            tx, self.account.key.hex()
-        )
-
-        tx_hash = self._provider.api.eth.send_raw_transaction(
-            signed_tx.rawTransaction.hex()
-        )
-
-        receipt = self._provider.api.eth.wait_for_transaction_receipt(
-            tx_hash
-        )
-
-        return receipt
+        ), gas_params)
 
     def close_position(
-        self,
-        params: ClosePositionParams,
-        gas_params: GasParams
+            self,
+            params: ClosePositionParams,
+            gas_params: GasParams
     ):
         '''
         Close Position
@@ -239,10 +284,10 @@ class ClearingHouse:
         return receipt
 
     def liquidate(
-        self,
-        trader: str,
-        base_token: str,
-        gas_params: GasParams
+            self,
+            trader: str,
+            base_token: str,
+            gas_params: GasParams
     ):
         '''
         Liquidate
@@ -251,11 +296,11 @@ class ClearingHouse:
         base_token - contract address of base token
         gas_params - GasParams object
         '''
-        assert(
+        assert (
             Web3.isAddress(trader),
             f'trader address {trader} must be a checksum address'
         )
-        assert(
+        assert (
             Web3.isAddress(base_token),
             f'Base Token address {base_token} must be a checkcum address'
         )
@@ -290,10 +335,10 @@ class ClearingHouse:
     # TODO: implement cancelExcessOrders
 
     def cancel_all_excess_orders(
-        self,
-        maker: str,
-        base_token: str,
-        gas_params: GasParams
+            self,
+            maker: str,
+            base_token: str,
+            gas_params: GasParams
     ):
         '''
         Cancel All Excess Orders
@@ -302,11 +347,11 @@ class ClearingHouse:
         base_token - contract address of base token
         gas_params - GasParams object
         '''
-        assert(
+        assert (
             Web3.isAddress(maker),
             f'Maker address {maker} must be a checksum address'
         )
-        assert(
+        assert (
             Web3.isAddress(base_token),
             f'Base Token address {base_token} must be a checksum address'
         )
@@ -340,10 +385,10 @@ class ClearingHouse:
         return receipt
 
     def close_position_in_closed_market(
-        self,
-        trader: str,
-        base_token: str,
-        gas_params: GasParams
+            self,
+            trader: str,
+            base_token: str,
+            gas_params: GasParams
     ):
         '''
         Close Position in Closed Market
@@ -352,11 +397,11 @@ class ClearingHouse:
         base_token - contract address of base token
         gas_params - GasParams object
         '''
-        assert(
+        assert (
             Web3.isAddress(trader),
             f'trader address {trader} must be a checksum address'
         )
-        assert(
+        assert (
             Web3.isAddress(base_token),
             f'Base Token address {base_token} must be a checkcum address'
         )
@@ -389,11 +434,11 @@ class ClearingHouse:
         return receipt
 
     def uniswap_v3_mint_callback(
-        self,
-        amount0Owed: int,
-        amount1Owed: int,
-        data: str,
-        gas_params: GasParams
+            self,
+            amount0Owed: int,
+            amount1Owed: int,
+            data: str,
+            gas_params: GasParams
     ):
         '''
         Uniswap V3 mint callback.
@@ -428,11 +473,11 @@ class ClearingHouse:
         return receipt
 
     def uniswap_v3_swap_callback(
-        self,
-        amount0Delta: int,
-        amount1Delta: int,
-        data: str,
-        gas_params: GasParams
+            self,
+            amount0Delta: int,
+            amount1Delta: int,
+            data: str,
+            gas_params: GasParams
     ):
         '''
         Uniswap V3 Swap Callback.
@@ -518,15 +563,15 @@ class ClearingHouse:
         return self.clearing_house.functions.getInsuraceFund().call()
 
     def get_account_value(
-        self,
-        trader: str
+            self,
+            trader: str
     ):
         '''
         Returns account value.
         Arguments:
         trader - wallet address of trader.
         '''
-        assert(
+        assert (
             Web3.isAddress(trader),
             f'trader address {trader} must be a checksum address'
         )
