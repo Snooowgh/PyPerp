@@ -85,6 +85,7 @@ class ClearingHouse:
                     raise e
             finally:
                 self.mutex.release()
+                break
         return tx_hash
 
     def add_liquidity(
